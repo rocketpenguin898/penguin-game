@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Rocket Blaster</title>
     <!-- Tailwind CSS CDN -->
-    <script src="[https://cdn.tailwindcss.com](https://cdn.tailwindcss.com)"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
     <!-- Tone.js CDN for sound effects -->
-    <script src="[https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js](https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js)"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
     <style>
         /* Custom styles for the game */
         body {
@@ -142,7 +142,7 @@
 
         // Rocket Image
         const rocketImage = new Image();
-        rocketImage.src = '[https://i.imgur.com/IXOAZ9j.png](https://i.imgur.com/IXOAZ9j.png)'; // Updated image source
+        rocketImage.src = 'https://i.imgur.com/IXOAZ9j.png'; // Updated image source
         let rocketImageLoaded = false;
         rocketImage.onload = () => {
             rocketImageLoaded = true;
@@ -155,10 +155,10 @@
 
         // Blue Penguin Images
         const bluePenguinImageSources = [
-            '[https://i.imgur.com/o8St4Z1.png](https://i.imgur.com/o8St4Z1.png)',
-            '[https://i.imgur.com/Eu9r5Uo.png](https://i.imgur.com/Eu9r5Uo.png)',
-            '[https://i.imgur.com/QjDQg3M.png](https://i.imgur.com/QjDQg3M.png)',
-            '[https://i.imgur.com/IYLU3BI.png](https://i.imgur.com/IYLU3BI.png)'
+            'https://i.imgur.com/o8St4Z1.png',
+            'https://i.imgur.com/Eu9r5Uo.png',
+            'https://i.imgur.com/QjDQg3M.png',
+            'https://i.imgur.com/IYLU3BI.png'
         ];
         let loadedBluePenguinImages = [];
         let bluePenguinImagesLoadedCount = 0;
@@ -168,6 +168,7 @@
             const img = new Image();
             img.src = src;
             img.onload = () => {
+                loadedBluePenguinImages.push(img); // Add to the array only on successful load
                 bluePenguinImagesLoadedCount++;
                 if (bluePenguinImagesLoadedCount === bluePenguinImageSources.length) {
                     draw(); // Redraw once all images are loaded
@@ -176,12 +177,11 @@
             img.onerror = () => {
                 console.error(`Failed to load blue penguin image: ${src}`);
             };
-            loadedBluePenguinImages.push(img);
         });
 
         // Golden Penguin Image
         const goldenPenguinImage = new Image();
-        goldenPenguinImage.src = '[https://i.imgur.com/eIvTGPd.png](https://i.imgur.com/eIvTGPd.png)'; // Updated golden penguin image source
+        goldenPenguinImage.src = 'https://i.imgur.com/eIvTGPd.png'; // Updated golden penguin image source
         let goldenPenguinImageLoaded = false;
         goldenPenguinImage.onload = () => {
             goldenPenguinImageLoaded = true;
@@ -193,7 +193,7 @@
 
         // Boss Image
         const bossImage = new Image();
-        bossImage.src = '[https://i.imgur.com/0DFsv5z.png](https://i.imgur.com/0DFsv5z.png)'; // New boss image source
+        bossImage.src = 'https://i.imgur.com/0DFsv5z.png'; // New boss image source
         let bossImageLoaded = false;
         bossImage.onload = () => {
             bossImageLoaded = true;
@@ -205,7 +205,7 @@
 
         // Bullet Image
         const bulletImage = new Image();
-        bulletImage.src = '[https://i.imgur.com/BywpoAV.png](https://i.imgur.com/BywpoAV.png)'; // New bullet image source
+        bulletImage.src = 'https://i.imgur.com/BywpoAV.png'; // New bullet image source
         let bulletImageLoaded = false;
         bulletImage.onload = () => {
             bulletImageLoaded = true;
@@ -300,6 +300,9 @@
 
         // Function to initialize Tone.js players and music
         function initAudio() {
+            // Set a default master volume for all Tone.js output
+            Tone.Master.volume.value = -10; // Sets volume to -10dB
+
             // Using a simple synth for bullet sound, as external URLs are not allowed for sound files.
             // In a real scenario, you'd load a .wav or .mp3 file here.
             bulletPlayer = new Tone.Synth().toDestination();
@@ -375,7 +378,11 @@
             if (!gameStarted && e.code === 'Space') {
                 // Start audio context on first user interaction
                 if (Tone.context.state !== 'running') {
-                    Tone.start();
+                    Tone.start().then(() => {
+                        console.log("Tone.js audio context started:", Tone.context.state);
+                    }).catch(err => {
+                        console.error("Failed to start Tone.js audio context:", err);
+                    });
                 }
                 startGame();
             }
@@ -400,7 +407,11 @@
         restartButton.addEventListener('click', () => {
             // Start audio context on first user interaction (if not already running)
             if (Tone.context.state !== 'running') {
-                Tone.start();
+                Tone.start().then(() => {
+                    console.log("Tone.js audio context started:", Tone.context.state);
+                }).catch(err => {
+                    console.error("Failed to start Tone.js audio context:", err);
+                });
             }
             hideMessageBox();
             resetGame();
@@ -517,6 +528,7 @@
             if (musicSequence) {
                 musicSequence.start();
             }
+            console.log("Game started, music sequence state:", musicSequence ? musicSequence.state : "not initialized");
         }
 
         // --- Drawing Functions ---
@@ -749,67 +761,53 @@
             }
         }
 
-        // New drawing function for the boss
+        function drawBullet(bullet) {
+            if (bulletImageLoaded) {
+                ctx.drawImage(bulletImage, bullet.x, bullet.y, bullet.width, bullet.height);
+            } else {
+                // Fallback drawing if image not loaded
+                ctx.fillStyle = bullet.color;
+                ctx.fillRect(bullet.x, bullet.y, bullet.width, bullet.height);
+            }
+        }
+
         function drawBoss() {
             if (!boss.active) return;
 
-            // Draw pulsating aura effect for the boss
-            const auraStrength = Math.sin(glowTime * 0.003) * 0.2 + 0.8; // Pulsates between 0.8 and 1.0
-            const auraWidth = boss.width * 1.1 * auraStrength; // Aura size
-            const auraHeight = boss.height * 1.1 * auraStrength; // Aura size
-            const auraX = boss.x + boss.width / 2;
-            const auraY = boss.y + boss.height / 2;
-
-            ctx.beginPath();
-            ctx.ellipse(auraX, auraY, auraWidth / 2, auraHeight / 2, 0, 0, Math.PI * 2);
-            ctx.fillStyle = `rgba(255, 0, 0, ${0.3 * auraStrength})`; // Red aura with pulsating alpha
-            ctx.fill();
-            ctx.closePath();
-
-            if (bossImageLoaded && bossImage.complete) {
+            if (bossImageLoaded) {
                 ctx.drawImage(bossImage, boss.x, boss.y, boss.width, boss.height);
             } else {
+                // Fallback drawing if image not loaded
                 ctx.fillStyle = boss.color;
                 ctx.fillRect(boss.x, boss.y, boss.width, boss.height);
             }
 
-            // Draw boss health bar
-            const healthBarWidth = boss.width;
+            // Draw health bar
+            const healthBarWidth = boss.width * 0.8;
             const healthBarHeight = 10;
-            const healthBarX = boss.x;
-            const healthBarY = boss.y - healthBarHeight - 5; // Above the boss
-            ctx.fillStyle = 'red';
+            const healthBarX = boss.x + (boss.width - healthBarWidth) / 2;
+            const healthBarY = boss.y + boss.height + 10;
+
+            ctx.fillStyle = '#FF0000'; // Red background for health bar
             ctx.fillRect(healthBarX, healthBarY, healthBarWidth, healthBarHeight);
-            ctx.fillStyle = 'lime';
-            ctx.fillRect(healthBarX, healthBarY, (boss.health / boss.maxHealth) * healthBarWidth, healthBarHeight);
-            ctx.strokeStyle = 'white';
+
+            ctx.fillStyle = '#00FF00'; // Green health
+            const currentHealthWidth = (boss.health / boss.maxHealth) * healthBarWidth;
+            ctx.fillRect(healthBarX, healthBarY, currentHealthWidth, healthBarHeight);
+
+            ctx.strokeStyle = '#FFFFFF'; // White border for health bar
             ctx.lineWidth = 1;
             ctx.strokeRect(healthBarX, healthBarY, healthBarWidth, healthBarHeight);
         }
 
-        // New drawing function for bullets
-        function drawBullet(bullet) {
-            if (bulletImageLoaded) {
-                ctx.drawImage(bulletImage, bullet.x - bullet.width / 2, bullet.y - bullet.height / 2, bullet.width, bullet.height);
-            } else {
-                ctx.fillStyle = bullet.color;
-                ctx.beginPath();
-                ctx.arc(bullet.x, bullet.y, bullet.radius, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.closePath();
-            }
-        }
-
-        // New drawing function for boss projectiles
         function drawBossProjectile(projectile) {
-            ctx.fillStyle = projectile.color;
+            ctx.fillStyle = bossProjectileColor;
             ctx.beginPath();
             ctx.arc(projectile.x, projectile.y, projectile.radius, 0, Math.PI * 2);
             ctx.fill();
             ctx.closePath();
         }
 
-        // Initialize stars for background
         function initStars() {
             stars = []; // Clear existing stars
             for (let i = 0; i < numStars; i++) {
@@ -817,16 +815,15 @@
                     x: Math.random() * canvas.width,
                     y: Math.random() * canvas.height,
                     radius: Math.random() * 1.5 + 0.5, // Small stars
-                    opacity: Math.random() // Varying opacity
+                    alpha: Math.random() * 0.8 + 0.2 // Varying brightness
                 });
             }
         }
 
-        // Draw stars for background
         function drawStars() {
-            ctx.fillStyle = 'white';
+            ctx.fillStyle = '#FFFFFF'; // White stars
             stars.forEach(star => {
-                ctx.globalAlpha = star.opacity;
+                ctx.globalAlpha = star.alpha;
                 ctx.beginPath();
                 ctx.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
                 ctx.fill();
@@ -835,113 +832,202 @@
             ctx.globalAlpha = 1; // Reset alpha
         }
 
-        // Main drawing function
         function draw() {
             ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear canvas
-            drawStars(); // Draw background stars
-            drawRocket(); // Draw the rocket
-            rocks.forEach(drawRock); // Draw all rocks
-            penguins.forEach(drawPenguin); // Draw all penguins
-            bullets.forEach(drawBullet); // Draw all player bullets
-            bossProjectiles.forEach(drawBossProjectile); // Draw all boss projectiles
-            drawBoss(); // Draw the boss
+            drawStars(); // Draw stars first
+            drawRocket();
+            rocks.forEach(drawRock);
+            penguins.forEach(drawPenguin);
+            bullets.forEach(drawBullet); // Draw player bullets
+            drawBoss(); // Draw boss if active
+            bossProjectiles.forEach(drawBossProjectile); // Draw boss projectiles
         }
 
         // --- Game Logic Updates ---
 
-        function updateRocket() {
-            if (keys['ArrowLeft']) {
+        function update() {
+            if (gameOver) return;
+
+            // Update glow time for golden penguins
+            glowTime = Date.now(); 
+
+            // Move rocket
+            if (keys['ArrowLeft'] && rocket.x > 0) {
                 rocket.dx = -rocket.speed;
-            } else if (keys['ArrowRight']) {
+            } else if (keys['ArrowRight'] && rocket.x + rocket.width < canvas.width) {
                 rocket.dx = rocket.speed;
             } else {
                 rocket.dx = 0;
             }
 
-            // Apply dash speed if currently dashing
+            // Apply dash if active
             if (rocket.isDashing) {
-                rocket.x += rocket.dx > 0 ? rocket.dashSpeed : (rocket.dx < 0 ? -rocket.dashSpeed : 0);
+                rocket.x += rocket.dx * (rocket.dashSpeed / rocket.speed);
             } else {
                 rocket.x += rocket.dx;
             }
 
-            // Keep rocket within canvas bounds
+            // Keep rocket within bounds
             if (rocket.x < 0) {
                 rocket.x = 0;
             }
             if (rocket.x + rocket.width > canvas.width) {
                 rocket.x = canvas.width - rocket.width;
             }
-        }
 
-        function handleDash() {
-            const currentTime = Date.now();
-            if (!rocket.isDashing && (currentTime - rocket.lastDashTime > rocket.dashCooldown)) {
-                rocket.isDashing = true;
-                rocket.lastDashTime = currentTime;
-                setTimeout(() => {
-                    rocket.isDashing = false;
-                }, rocket.dashDuration);
-            }
-        }
-
-        function updateRocks() {
-            rocks.forEach(rock => {
-                rock.y += rock.speed;
-            });
-            // Remove rocks that are off-screen
-            rocks = rocks.filter(rock => rock.y - rock.radius < canvas.height);
-        }
-
-        function updatePenguins() {
-            penguins.forEach(penguin => {
-                penguin.y += penguin.speed;
-            });
-            // Remove penguins that are off-screen
-            penguins = penguins.filter(penguin => penguin.y - penguin.radius < canvas.height);
-        }
-
-        function updateBullets() {
-            bullets.forEach(bullet => {
-                bullet.y -= bulletSpeed;
-            });
-            // Remove bullets that are off-screen
-            bullets = bullets.filter(bullet => bullet.y + bullet.height > 0);
-        }
-
-        function updateBoss() {
-            if (!boss.active) return;
-
-            // Move boss horizontally
-            boss.x += boss.dx * boss.direction;
-
-            // Reverse direction if boss hits canvas edges
-            if (boss.x + boss.width > canvas.width || boss.x < 0) {
-                boss.direction *= -1;
-            }
-        }
-
-        function updateBossProjectiles() {
-            bossProjectiles.forEach(projectile => {
-                projectile.y += bossProjectileSpeed;
-            });
-            // Remove projectiles that are off-screen
-            bossProjectiles = bossProjectiles.filter(projectile => projectile.y - projectile.radius < canvas.height);
-        }
-
-        function updateStars() {
+            // Update stars
             stars.forEach(star => {
                 star.y += starSpeed;
                 if (star.y > canvas.height) {
-                    star.y = 0; // Reset to top
-                    star.x = Math.random() * canvas.width; // New random x
+                    star.y = 0;
+                    star.x = Math.random() * canvas.width;
+                }
+            });
+
+            // Update rocks
+            rocks.forEach(rock => {
+                rock.y += rock.speed;
+            });
+            rocks = rocks.filter(rock => rock.y - rock.radius < canvas.height); // Remove off-screen rocks
+
+            // Update penguins
+            penguins.forEach(penguin => {
+                penguin.y += penguin.speed;
+            });
+            penguins = penguins.filter(penguin => penguin.y - penguin.radius < canvas.height); // Remove off-screen penguins
+
+            // Update bullets
+            bullets.forEach(bullet => {
+                bullet.y -= bullet.speed;
+            });
+            bullets = bullets.filter(bullet => bullet.y + bullet.height > 0); // Remove off-screen bullets
+
+            // Update boss
+            if (boss.active) {
+                boss.x += boss.dx * boss.direction;
+                if (boss.x + boss.width > canvas.width || boss.x < 0) {
+                    boss.direction *= -1; // Reverse direction
+                }
+            }
+
+            // Update boss projectiles
+            bossProjectiles.forEach(projectile => {
+                projectile.y += projectile.speed;
+            });
+            bossProjectiles = bossProjectiles.filter(projectile => projectile.y - projectile.radius < canvas.height); // Remove off-screen projectiles
+
+            checkCollisions();
+            updateUI();
+
+            // Increase difficulty based on score and activate boss
+            if (score >= 1500 && !boss.active && bossDefeatedCount === 0) { // First boss at 1500 score
+                spawnBoss();
+            } else if (score >= 3000 && !boss.active && bossDefeatedCount === 1) { // Second boss at 3000 score
+                spawnBoss();
+            } else if (score >= 6000 && !boss.active && bossDefeatedCount === 2) { // Third boss at 6000 score
+                spawnBoss();
+            }
+            // Add more boss spawn conditions as needed
+        }
+
+        // --- Collision Detection ---
+
+        function checkCollisions() {
+            // Rocket-Rock collision
+            rocks.forEach((rock, rockIndex) => {
+                const dist = Math.sqrt(
+                    (rocket.x + rocket.width / 2 - rock.x) ** 2 +
+                    (rocket.y + rocket.height / 2 - rock.y) ** 2
+                );
+                if (dist < rocket.width / 2 + rock.radius && !rocket.isDashing) {
+                    createExplosionEffect(rocket.x + rocket.width / 2, rocket.y + rocket.height / 2);
+                    if (explosionPlayer) explosionPlayer.triggerAttackRelease("8n");
+                    endGame();
+                }
+            });
+
+            // Rocket-Penguin collision
+            penguins.forEach((penguin, penguinIndex) => {
+                const dist = Math.sqrt(
+                    (rocket.x + rocket.width / 2 - penguin.x) ** 2 +
+                    (rocket.y + rocket.height / 2 - penguin.y) ** 2
+                );
+                if (dist < rocket.width / 2 + penguin.radius) {
+                    if (penguin.isGolden) {
+                        score += 100; // Golden penguins give more points
+                        goldenPengus++;
+                        if (goldenPenguinCollectPlayer) goldenPenguinCollectPlayer.triggerAttackRelease("E5", "16n"); // Higher pitch for golden
+                    } else {
+                        score += 25; // Blue penguins now give 25 points
+                        penguinsSaved++;
+                        if (bluePenguinCollectPlayer) bluePenguinCollectPlayer.triggerAttackRelease("C5", "16n"); // Lower pitch for blue
+                    }
+                    penguins.splice(penguinIndex, 1); // Remove collected penguin
+                }
+            });
+
+            // Bullet-Boss collision
+            if (boss.active) {
+                bullets.forEach((bullet, bulletIndex) => {
+                    // Check if bullet intersects with boss bounding box
+                    if (bullet.x < boss.x + boss.width &&
+                        bullet.x + bullet.width > boss.x &&
+                        bullet.y < boss.y + boss.height &&
+                        bullet.y + bullet.height > boss.y) {
+
+                        boss.health -= 50; // Damage boss
+                        bullets.splice(bulletIndex, 1); // Remove bullet
+
+                        if (boss.health <= 0) {
+                            createExplosionEffect(boss.x + boss.width / 2, boss.y + boss.height / 2, 100); // Larger explosion for boss
+                            if (explosionPlayer) explosionPlayer.triggerAttackRelease("4n"); // Longer explosion sound
+                            boss.active = false;
+                            bossDefeatedCount++;
+                            score += 500; // Bonus for defeating boss
+                            // Clear boss attack interval when defeated
+                            if (boss.attackInterval) {
+                                clearInterval(boss.attackInterval);
+                                boss.attackInterval = null;
+                            }
+                            // Resume regular spawners
+                            rockSpawnIntervalId = setInterval(spawnRock, rockSpawnRate / difficulty);
+                            penguinSpawnIntervalId = setInterval(spawnPenguin, penguinSpawnRate);
+                            // Increase difficulty after boss
+                            difficulty += 0.5;
+                        }
+                    }
+                });
+            }
+
+            // Rocket-BossProjectile collision
+            bossProjectiles.forEach((projectile, projIndex) => {
+                const dist = Math.sqrt(
+                    (rocket.x + rocket.width / 2 - projectile.x) ** 2 +
+                    (rocket.y + rocket.height / 2 - projectile.y) ** 2
+                );
+                if (dist < rocket.width / 2 + projectile.radius && !rocket.isDashing) {
+                    createExplosionEffect(rocket.x + rocket.width / 2, rocket.y + rocket.height / 2);
+                    if (explosionPlayer) explosionPlayer.triggerAttackRelease("8n");
+                    endGame();
                 }
             });
         }
 
         // --- Spawning Functions ---
 
+        function spawnBullet() {
+            bullets.push({
+                x: rocket.x + rocket.width / 2 - bulletWidth / 2,
+                y: rocket.y,
+                width: bulletWidth,
+                height: bulletHeight,
+                speed: bulletSpeed,
+                color: bulletColor
+            });
+        }
+
         function spawnRock() {
+            if (boss.active) return; // Don't spawn rocks if boss is active
             const radius = Math.random() * (maxRockRadius - minRockRadius) + minRockRadius;
             rocks.push({
                 x: Math.random() * (canvas.width - radius * 2) + radius,
@@ -952,225 +1038,25 @@
         }
 
         function spawnPenguin() {
+            if (boss.active) return; // Don't spawn penguins if boss is active
             const isGolden = Math.random() < goldenPenguinChance;
             const radius = isGolden ? goldenPenguinRadius : normalPenguinRadius;
-            const image = isGolden ? goldenPenguinImage : loadedBluePenguinImages[Math.floor(Math.random() * loadedBluePenguinImages.length)];
+            const randomImage = loadedBluePenguinImages[Math.floor(Math.random() * loadedBluePenguinImages.length)];
+
             penguins.push({
                 x: Math.random() * (canvas.width - radius * 2) + radius,
                 y: -radius, // Start above canvas
                 radius: radius,
                 speed: basePenguinSpeed,
                 isGolden: isGolden,
-                image: image // Assign the loaded image
+                image: randomImage // Assign a random blue penguin image
             });
         }
 
-        function spawnBullet() {
-            // Bullet spawns from the top center of the rocket
-            bullets.push({
-                x: rocket.x + rocket.width / 2,
-                y: rocket.y,
-                width: bulletWidth,
-                height: bulletHeight,
-                radius: bulletWidth / 2, // For collision detection
-                color: bulletColor
-            });
-        }
-
-        function spawnBossProjectile() {
-            if (!boss.active) return;
-            // Projectile spawns from the bottom center of the boss
-            bossProjectiles.push({
-                x: boss.x + boss.width / 2,
-                y: boss.y + boss.height,
-                radius: bossProjectileRadius,
-                color: bossProjectileColor
-            });
-            if (bossProjectilePlayer) bossProjectilePlayer.triggerAttackRelease("A3", "8n"); // Play boss projectile sound
-        }
-
-        // --- Collision Detection ---
-
-        function checkCollision(obj1, obj2) {
-            // AABB collision detection for rectangular objects (rocket, bullets, boss)
-            // Circle collision for rocks and penguins
-            if (obj1.radius && obj2.radius) { // Both are circles (rock-penguin, rock-rock, penguin-penguin) - not needed for this game
-                const dx = obj1.x - obj2.x;
-                const dy = obj1.y - obj2.y;
-                const distance = Math.sqrt(dx * dx + dy * dy);
-                return distance < (obj1.radius + obj2.radius);
-            } else if (obj1.radius && !obj2.radius) { // obj1 is circle (rock/penguin), obj2 is rect (rocket/bullet/boss)
-                const closestX = Math.max(obj2.x, Math.min(obj1.x, obj2.x + obj2.width));
-                const closestY = Math.max(obj2.y, Math.min(obj1.y, obj2.y + obj2.height));
-                const dx = obj1.x - closestX;
-                const dy = obj1.y - closestY;
-                return (dx * dx + dy * dy) < (obj1.radius * obj1.radius);
-            } else if (!obj1.radius && obj2.radius) { // obj1 is rect, obj2 is circle
-                return checkCollision(obj2, obj1); // Swap and reuse
-            } else { // Both are rectangles
-                return obj1.x < obj2.x + obj2.width &&
-                       obj1.x + obj1.width > obj2.x &&
-                       obj1.y < obj2.y + obj2.height &&
-                       obj1.y + obj1.height > obj2.y;
-            }
-        }
-
-        function handleCollisions() {
-            // Rocket vs. Rocks
-            rocks.forEach((rock, rockIndex) => {
-                if (checkCollision(rocket, rock) && !rocket.isDashing) { // Rocket is not invulnerable during dash
-                    // Game Over
-                    gameOver = true;
-                    showExplosion(rocket.x + rocket.width / 2, rocket.y + rocket.height / 2);
-                    if (explosionPlayer) explosionPlayer.triggerAttackRelease("8n", Tone.context.currentTime);
-                    showMessageBox("Game Over!", `You saved ${penguinsSaved} penguins and collected ${goldenPengus} golden penguins! You defeated ${bossDefeatedCount} bosses!`, false);
-                }
-            });
-
-            // Rocket vs. Penguins
-            penguins.forEach((penguin, penguinIndex) => {
-                if (checkCollision(rocket, penguin)) {
-                    if (penguin.isGolden) {
-                        score += 50; // Golden penguins give more points
-                        goldenPengus++;
-                        if (goldenPenguinCollectPlayer) goldenPenguinCollectPlayer.triggerAttackRelease("G5", "16n"); // Higher pitch for golden
-                    } else {
-                        score += 10;
-                        penguinsSaved++;
-                        if (bluePenguinCollectPlayer) bluePenguinCollectPlayer.triggerAttackRelease("C5", "16n"); // Regular pitch for blue
-                    }
-                    penguins.splice(penguinIndex, 1); // Remove collected penguin
-                    updateUI();
-                }
-            });
-
-            // Player Bullets vs. Boss
-            if (boss.active) {
-                bullets.forEach((bullet, bulletIndex) => {
-                    if (checkCollision(bullet, boss)) {
-                        boss.health -= 50; // Bullet damage
-                        bullets.splice(bulletIndex, 1); // Remove bullet
-                        if (boss.health <= 0) {
-                            // Boss defeated
-                            boss.active = false;
-                            bossDefeatedCount++;
-                            score += 1000; // Bonus for defeating boss
-                            showExplosion(boss.x + boss.width / 2, boss.y + boss.height / 2);
-                            if (explosionPlayer) explosionPlayer.triggerAttackRelease("2n", Tone.context.currentTime); // Louder explosion
-                            updateUI();
-                            // Clear boss attack interval
-                            if (boss.attackInterval) {
-                                clearInterval(boss.attackInterval);
-                                boss.attackInterval = null;
-                            }
-                            // Resume normal rock and penguin spawning
-                            rockSpawnIntervalId = setInterval(spawnRock, rockSpawnRate / difficulty);
-                            penguinSpawnIntervalId = setInterval(spawnPenguin, penguinSpawnRate);
-                        }
-                        updateUI();
-                    }
-                });
-            }
-
-            // Rocket vs. Boss Projectiles
-            bossProjectiles.forEach((projectile, projIndex) => {
-                if (checkCollision(rocket, projectile) && !rocket.isDashing) {
-                    // Game Over
-                    gameOver = true;
-                    showExplosion(rocket.x + rocket.width / 2, rocket.y + rocket.height / 2);
-                    if (explosionPlayer) explosionPlayer.triggerAttackRelease("8n", Tone.context.currentTime);
-                    showMessageBox("Game Over!", `You saved ${penguinsSaved} penguins and collected ${goldenPengus} golden penguins! You defeated ${bossDefeatedCount} bosses!`, false);
-                }
-            });
-        }
-
-        // --- UI Functions ---
-
-        function updateUI() {
-            scoreDisplay.textContent = `Score: ${score}`;
-            penguinsSavedDisplay.textContent = `Penguins Saved: ${penguinsSaved}`;
-            goldenPengusDisplay.textContent = `Golden Penguins: ${goldenPengus}`;
-            bossDefeatedCountDisplay.textContent = `Bosses Defeated: ${bossDefeatedCount}`;
-        }
-
-        function showMessageBox(title, text, isStartScreen) {
-            messageTitle.textContent = title;
-            messageText.textContent = text;
-            restartButton.textContent = isStartScreen ? "Start Game" : "Restart Game";
-            messageBox.style.display = 'block';
-        }
-
-        function hideMessageBox() {
-            messageBox.style.display = 'none';
-        }
-
-        function showExplosion(x, y) {
-            const explosionDiv = document.createElement('div');
-            explosionDiv.className = 'explosion-effect';
-            explosionDiv.style.left = `${x}px`;
-            explosionDiv.style.top = `${y}px`;
-            gameContainer.appendChild(explosionDiv);
-
-            // Remove the explosion element after its animation
-            explosionDiv.addEventListener('animationend', () => {
-                explosionDiv.remove();
-            });
-        }
-
-        // --- Main Game Loop ---
-
-        function gameLoop() {
-            if (gameOver) {
-                cancelAnimationFrame(animationFrameId);
-                clearInterval(rockSpawnIntervalId);
-                clearInterval(penguinSpawnIntervalId);
-                if (boss.attackInterval) {
-                    clearInterval(boss.attackInterval);
-                }
-                // Stop background music on game over
-                if (musicSequence && musicSequence.state === 'started') {
-                    musicSequence.stop();
-                }
-                return;
-            }
-
-            glowTime = Date.now(); // Update glow time for pulsating effects
-
-            updateStars();
-            updateRocket();
-            updateRocks();
-            updatePenguins();
-            updateBullets();
-            updateBoss();
-            updateBossProjectiles();
-            handleCollisions();
-            updateDifficulty(); // Call difficulty update
-            draw();
-
-            animationFrameId = requestAnimationFrame(gameLoop);
-        }
-
-        // --- Difficulty Scaling ---
-
-        function updateDifficulty() {
-            // Increase difficulty based on score or penguins saved
-            if (score >= difficulty * 500) { // Every 500 points, increase difficulty
-                difficulty += 0.5; // Increment difficulty
-                // Make rocks slightly faster and more frequent as difficulty increases
-                baseRockSpeed += 0.2; // Increase rock speed slightly
-                rockSpawnRate = Math.max(100, rockSpawnRate - 20); // Decrease rock spawn interval slightly
-                console.log(`Difficulty increased to: ${difficulty}`);
-                // Potentially activate boss or increase boss difficulty
-                if (difficulty % 2 === 0 && !boss.active) { // Every 2 difficulty levels, activate boss
-                    activateBoss();
-                }
-            }
-        }
-
-        function activateBoss() {
+        function spawnBoss() {
             boss.active = true;
             boss.health = boss.maxHealth; // Reset boss health
-            // Stop regular spawners when boss is active
+            // Clear regular spawners when boss appears
             if (rockSpawnIntervalId) {
                 clearInterval(rockSpawnIntervalId);
                 rockSpawnIntervalId = null;
@@ -1180,17 +1066,99 @@
                 penguinSpawnIntervalId = null;
             }
             // Start boss attack interval
-            if (!boss.attackInterval) {
-                boss.attackInterval = setInterval(spawnBossProjectile, boss.attackRate);
-            }
-            console.log("Boss activated!");
+            boss.attackInterval = setInterval(spawnBossProjectile, boss.attackRate);
         }
 
-        // Initialize audio context and game on window load
+        function spawnBossProjectile() {
+            if (!boss.active) return;
+            bossProjectiles.push({
+                x: boss.x + boss.width / 2,
+                y: boss.y + boss.height,
+                radius: bossProjectileRadius,
+                speed: bossProjectileSpeed
+            });
+            if (bossProjectilePlayer) bossProjectilePlayer.triggerAttackRelease("C2", "16n"); // Play boss projectile sound
+        }
+
+        // --- Player Actions ---
+
+        function handleDash() {
+            const currentTime = Date.now();
+            if (currentTime - rocket.lastDashTime > rocket.dashCooldown && !rocket.isDashing) {
+                rocket.isDashing = true;
+                rocket.lastDashTime = currentTime;
+                setTimeout(() => {
+                    rocket.isDashing = false;
+                }, rocket.dashDuration);
+            }
+        }
+
+        // --- UI and Game State Management ---
+
+        function updateUI() {
+            scoreDisplay.textContent = `Score: ${score}`;
+            penguinsSavedDisplay.textContent = `Penguins Saved: ${penguinsSaved}`;
+            goldenPengusDisplay.textContent = `Golden Penguins: ${goldenPengus}`;
+            bossDefeatedCountDisplay.textContent = `Bosses Defeated: ${bossDefeatedCount}`;
+        }
+
+        function showMessageBox(title, text, showButton = false) {
+            messageTitle.textContent = title;
+            messageText.textContent = text;
+            restartButton.style.display = showButton ? 'block' : 'none';
+            messageBox.style.display = 'block';
+        }
+
+        function hideMessageBox() {
+            messageBox.style.display = 'none';
+        }
+
+        function createExplosionEffect(x, y, size = 50) {
+            const explosion = document.createElement('div');
+            explosion.className = 'explosion-effect';
+            explosion.style.left = `${x}px`;
+            explosion.style.top = `${y}px`;
+            explosion.style.width = `${size}px`;
+            explosion.style.height = `${size}px`;
+            gameContainer.appendChild(explosion);
+
+            // Remove the element after the animation
+            explosion.addEventListener('animationend', () => {
+                explosion.remove();
+            });
+        }
+
+        function endGame() {
+            gameOver = true;
+            gameStarted = false;
+            cancelAnimationFrame(animationFrameId);
+            clearInterval(rockSpawnIntervalId);
+            clearInterval(penguinSpawnIntervalId);
+            if (boss.attackInterval) {
+                clearInterval(boss.attackInterval);
+                boss.attackInterval = null;
+            }
+            // Stop music on game over
+            if (musicSequence && musicSequence.state === 'started') {
+                musicSequence.stop();
+            }
+            showMessageBox("Game Over!", `You scored ${score} points and saved ${penguinsSaved} penguins! You defeated ${bossDefeatedCount} bosses!`, true);
+        }
+
+        // --- Main Game Loop ---
+        function gameLoop() {
+            if (!gameOver) {
+                update();
+                draw();
+                animationFrameId = requestAnimationFrame(gameLoop);
+            }
+        }
+
+        // Initialize audio and canvas on window load
         window.onload = function () {
             initAudio(); // Initialize Tone.js players and music
             resizeCanvas(); // Set initial canvas size and rocket position
-            initGame(); // Initialize game state and show start screen
+            initGame(); // Set up initial game state and show start message
         };
     </script>
 </body>
